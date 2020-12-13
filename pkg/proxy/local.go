@@ -27,6 +27,7 @@ func NewLocal(name, proxyAddr, connectingAddr string, errsig chan error) (*Local
 	}
 
 	localPorxy := &LocalProxy{
+		Name:   name,
 		pAddr:  pAddr,
 		cAddr:  cAddr,
 		errsig: errsig,
@@ -55,18 +56,20 @@ func (lp *LocalProxy) Listen() {
 		defer pConn.Close()
 
 		proxyConn := &localProxyConn{
-			cAddr:  lp.cAddr,
-			pConn:  pConn,
-			errsig: make(chan error),
+			proxyName: lp.Name,
+			cAddr:     lp.cAddr,
+			pConn:     pConn,
+			errsig:    make(chan error),
 		}
 		go proxyConn.Dial()
 	}
 }
 
 type localProxyConn struct {
-	cAddr  *net.TCPAddr
-	pConn  *net.TCPConn
-	errsig chan error
+	proxyName string
+	cAddr     *net.TCPAddr
+	pConn     *net.TCPConn
+	errsig    chan error
 }
 
 func (lpc *localProxyConn) Dial() {
@@ -82,13 +85,13 @@ func (lpc *localProxyConn) Dial() {
 	defer cConn.Close()
 
 	// proxying data
-	go lpc.pipe(lpc.pConn, cConn)
-	go lpc.pipe(cConn, lpc.pConn)
+	go lpc.pipe(lpc.pConn, cConn, "->")
+	go lpc.pipe(cConn, lpc.pConn, "<-")
 
 	<-lpc.errsig
 }
 
-func (lpc *localProxyConn) pipe(src, dst *net.TCPConn) {
+func (lpc *localProxyConn) pipe(src, dst *net.TCPConn, prefix string) {
 	buff := make([]byte, 0xffff)
 
 	for {
@@ -97,6 +100,8 @@ func (lpc *localProxyConn) pipe(src, dst *net.TCPConn) {
 			lpc.errsig <- err
 			return
 		}
+
+		log.WithField("proxy", lpc.proxyName).Infof("%s %d bytes", prefix, n)
 
 		n, err = dst.Write(buff[:n])
 		if err != nil {
