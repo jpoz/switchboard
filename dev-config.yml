@@ -5,3 +5,6 @@ localProxies:
     google:
         proxyAddress: '0.0.0.0:4000'
         connectingAddress: 'google.com:80'
+    redis:
+        proxyAddress: '0.0.0.0:6380'
+        connectingAddress: '127.0.0.1:6379'
