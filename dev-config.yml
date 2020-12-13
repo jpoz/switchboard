@@ -1,0 +1,7 @@
+localProxies:
+    postgres:
+        proxyAddress: '0.0.0.0:6543'
+        connectingAddress: '127.0.0.1:5432'
+    google:
+        proxyAddress: '0.0.0.0:4000'
+        connectingAddress: 'google.com:80'
