@@ -46,6 +46,7 @@ func (lp *LocalProxy) Listen() {
 		lp.errsig <- err
 		return
 	}
+	defer listener.Close()
 
 	for {
 		pConn, err := listener.AcceptTCP()
